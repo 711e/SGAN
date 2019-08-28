@@ -19,6 +19,7 @@ from data_loader import get_train_valid_loader
 from ops import gradient_penalty
 from metrics import Score
 
+
 class SGAN:
     def __init__(self):
         self.read_dataset()
@@ -45,7 +46,6 @@ class SGAN:
                                                                       pin_memory=False)
 
         return
-
 
     def real_data_target(self, size):
         '''
@@ -125,8 +125,10 @@ class SGAN:
             self.G_global.cuda()
 
         # Optimizers
-        self.D_global_optimizer = Adam(self.D_global.parameters(), lr=cfg.train.learning_rate, betas=(cfg.train.beta1, 0.999))
-        self.G_global_optimizer = Adam(self.G_global.parameters(), lr=cfg.train.learning_rate, betas=(cfg.train.beta1, 0.999))
+        self.D_global_optimizer = Adam(self.D_global.parameters(), lr=cfg.train.learning_rate,
+                                       betas=(cfg.train.beta1, 0.999))
+        self.G_global_optimizer = Adam(self.G_global.parameters(), lr=cfg.train.learning_rate,
+                                       betas=(cfg.train.beta1, 0.999))
 
         self.D_pairs = []
         self.G_pairs = []
@@ -146,7 +148,7 @@ class SGAN:
 
             self.D_pairs.append(discriminator)
             self.G_pairs.append(generator)
-            
+
             # Optimizers
             D_optimizer = Adam(discriminator.parameters(), lr=cfg.train.learning_rate, betas=(cfg.train.beta1, 0.999))
             G_optimizer = Adam(generator.parameters(), lr=cfg.train.learning_rate, betas=(cfg.train.beta1, 0.999))
@@ -171,7 +173,6 @@ class SGAN:
 
         self.logger = Logger(model_name='DCGAN', data_name='MNIST', logdir=cfg.validation.validation_dir)
 
-
         return
 
     def run_validation(self, generator, discriminator, epoch, i, type_GAN):
@@ -179,7 +180,8 @@ class SGAN:
         for batch_idx, (valid_batch_images, valid_batch_labels) in enumerate(self.valid_loader):
             valid_batch_size = len(valid_batch_images)
             valid_batch_labels = valid_batch_labels.type(torch.float32)
-            valid_batch_z = torch.from_numpy(np.random.uniform(-1, 1, [valid_batch_size, cfg.train.z_dim]).astype(np.float32))
+            valid_batch_z = torch.from_numpy(
+                np.random.uniform(-1, 1, [valid_batch_size, cfg.train.z_dim]).astype(np.float32))
 
             if torch.cuda.is_available():
                 valid_batch_images = valid_batch_images.cuda()
@@ -254,18 +256,23 @@ class SGAN:
             # Generate fake data
             G_fake_data = self.G_pairs[id](cfg.dataset.dataset_name, batch_z, batch_labels).detach()
             # Train D
-            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_global, self.D_global_optimizer,
-                                                                                        batch_images, G_fake_data, batch_labels)
+            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_global,
+                                                                                        self.D_global_optimizer,
+                                                                                        batch_images, G_fake_data,
+                                                                                        batch_labels)
 
             # 2. Train Generator
-            G_fake_data, G_loss = self.train_generator(self.G_pairs[id], self.D_global, self.G_pairs_optimizers[id], batch_z, batch_labels)
+            G_fake_data, G_loss = self.train_generator(self.G_pairs[id], self.D_global, self.G_pairs_optimizers[id],
+                                                       batch_z, batch_labels)
 
             # 3. Train Discriminator twice
             # Generate fake data
             G_fake_data = self.G_pairs[id](cfg.dataset.dataset_name, batch_z, batch_labels).detach()
             # Train D
-            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_global, self.D_global_optimizer,
-                                                                                        batch_images, G_fake_data, batch_labels)
+            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_global,
+                                                                                        self.D_global_optimizer,
+                                                                                        batch_images, G_fake_data,
+                                                                                        batch_labels)
 
             # Log error
             self.logger.log(D_loss, G_loss, epoch, batch_idx, nrof_batches, 'D0-' + str(id + 1))
@@ -305,18 +312,23 @@ class SGAN:
             # Generate fake data
             G_fake_data = self.G_global(cfg.dataset.dataset_name, batch_z, batch_labels).detach()
             # Train D
-            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_msg_pairs[id], self.D_msg_pairs_optimizers[id],
-                                                                                        batch_images, G_fake_data, batch_labels)
+            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_msg_pairs[id],
+                                                                                        self.D_msg_pairs_optimizers[id],
+                                                                                        batch_images, G_fake_data,
+                                                                                        batch_labels)
 
             # 2. Train Generator
-            G_fake_data, G_loss = self.train_generator(self.G_global, self.D_msg_pairs[id], self.G_global_optimizer, batch_z, batch_labels)
+            G_fake_data, G_loss = self.train_generator(self.G_global, self.D_msg_pairs[id], self.G_global_optimizer,
+                                                       batch_z, batch_labels)
 
             # 3. Train Discriminator twice
             # Generate fake data
             G_fake_data = self.G_global(cfg.dataset.dataset_name, batch_z, batch_labels).detach()
             # Train D
-            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_msg_pairs[id], self.D_msg_pairs_optimizers[id],
-                                                                                        batch_images, G_fake_data, batch_labels)
+            D_real, D_fake, D_loss, D_loss_real, D_loss_fake = self.train_discriminator(self.D_msg_pairs[id],
+                                                                                        self.D_msg_pairs_optimizers[id],
+                                                                                        batch_images, G_fake_data,
+                                                                                        batch_labels)
 
             # Log error
             self.logger.log(D_loss, G_loss, epoch, batch_idx, nrof_batches, 'G0-' + str(id + 1))
@@ -331,7 +343,8 @@ class SGAN:
                      time.time() - start_time, D_loss, G_loss))
             train_time += duration
             if batch_idx > 0 and batch_idx % 101 == 0:
-                self.run_validation(self.G_global, self.D_msg_pairs[id], epoch, batch_idx, 'G_global_pairs-' + str(id + 1))
+                self.run_validation(self.G_global, self.D_msg_pairs[id], epoch, batch_idx,
+                                    'G_global_pairs-' + str(id + 1))
             batch_idx += 1
 
         self.logger.save_models(self.G_global, self.D_msg_pairs[id], epoch, 'G_global_pairs-' + str(id + 1))
@@ -391,3 +404,8 @@ class SGAN:
         self.logger.save_models(self.G_pairs[id], self.D_pairs[id], epoch, 'pairs-' + str(id + 1))
 
         return
+
+
+if __name__ == '__main__':
+    sgan = SGAN()
+    sgan.run_train()

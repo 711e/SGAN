@@ -7,7 +7,7 @@ cfg.VANILLA = 'VANILLA'
 cfg.WGAN = 'WGAN'
 
 cfg.dataset = EasyDict()
-cfg.dataset.dataset_name = 'celebA' # 'mnist'
+cfg.dataset.dataset_name = 'mnist' # 'mnist' celebA
 cfg.dataset.data_dir = './data' if cfg.dataset.dataset_name == 'mnist' else '/home/firiuza/MachineLearning/celebA'
 cfg.dataset.seed = 547
 
